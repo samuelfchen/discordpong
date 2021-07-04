@@ -8,9 +8,11 @@ const app = new PIXI.Application({
     height: 600
 });
 
-// Constants
-const BALLSPEED = 5;
-const MAXBOUNCEANGLE = 1.309;
+// Configs
+const BALLSPEED = 5;            // Max speed of ball (movement of paddles changes accordingly)
+const MAXBOUNCEANGLE = 1.309;   // Max bounce angle (in radians)
+const P1COMPUTER = true;        // Whether P1 is a computer
+const P2COMPUTER = true;        // Whether P2 is a computer
 
 // Classes
 class Bullet extends PIXI.Sprite {
@@ -183,8 +185,8 @@ function doneLoading() {
 function createSprites() {
     players = new PIXI.Container();
     bullet = new Bullet(app.loader.resources.bullet.texture);
-    p1 = new Player(app.loader.resources.player.texture, 1, keyboard('ArrowUp'), keyboard('ArrowDown'), true);
-    p2 = new Player(app.loader.resources.player.texture, 2, keyboard('W'), keyboard('S'), true);
+    p1 = new Player(app.loader.resources.player.texture, 1, keyboard('ArrowUp'), keyboard('ArrowDown'), P1COMPUTER);
+    p2 = new Player(app.loader.resources.player.texture, 2, keyboard('W'), keyboard('S'), P2COMPUTER);
 
     players.addChild(p1);
     players.addChild(p2);
