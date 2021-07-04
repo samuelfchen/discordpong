@@ -3,6 +3,6 @@ This is a simple implementation of pong using PixiJS. The goal is to be able to 
 
 ## Usage 
 ### Basic Pong
-Run the index.html on a http server. This can be done using the Live Server plugin for VSCode. 
+Run the index.html in the pong folder on a http server. This can be done using the Live Server plugin for VSCode. 
 There are a couple variables that can be configured in game.js. 
 
