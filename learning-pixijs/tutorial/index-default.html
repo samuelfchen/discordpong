@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <style>
+        body {
+            margin: 0;
+        }
+    
+        canvas {
+            display: block;
+            background: blue;
+        }
+    </style>
+
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PixiJS Tutorial</title>
+    <!-- https://www.youtube.com/playlist?list=PL08jItIqOb2oGcyrgREbrm_b9OW7TE1ji -->
+</head>
+<body>
+    <canvas id="mycanvas"></canvas>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pixi.js/5.1.3/pixi.min.js"></script>
+    <script type="text/javascript">
+        const canvas = document.getElementById('mycanvas');
+
+        const app = new PIXI.Application({
+            view: canvas,
+            width: window.innerWidth, 
+            height: window.innerHeight
+        });
+
+        const texture = PIXI.Texture.from('sprite.png');
+        const img = new PIXI.Sprite(texture);
+        img.x = app.renderer.width / 2;
+        img.y = app.renderer.height / 2;
+        img.anchor.x = 0.5;
+        img.anchor.y = 0.5;
+        app.stage.addChild(img);
+
+        app.ticker.add(animate);
+
+        function animate() {
+            img.rotation += 0.1;
+        }
+    </script>
+</body>
+</html>
