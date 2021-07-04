@@ -8,30 +8,32 @@ const app = new PIXI.Application({
     height: 600
 });
 
+// Constants
+const BALLSPEED = 5;
+const MAXBOUNCEANGLE = 1.309;
+
 // Classes
 class Bullet extends PIXI.Sprite {
     constructor(texture) {
         super(texture)
 
-        this.BALLSPEED = 3;
-        this.MAXBOUNCEANGLE = 1.309;
-
         this.anchor.x = 0.5;
-        this.anchor.y = 0.5;
-
-        this.x = app.renderer.width / 2;
-        this.y = app.renderer.height / 2;
-
-        this.vx = this.BALLSPEED; 
-        this.vy = 0;
+        this.anchor.y = 0.5;        
     }
 
     reset() {
         // reset
+        let coinflip = Math.random() > 0.5;
+        let direction = 1;
+        if (coinflip) {
+            direction = -1;
+        }
+
+        let angle = (Math.random() - 0.5) * 0.5;
         this.x = app.renderer.width / 2;
         this.y = app.renderer.height / 2;
-        this.vx = this.BALLSPEED; 
-        this.vy = 0;
+        this.vx = BALLSPEED * direction * Math.cos(angle); 
+        this.vy = BALLSPEED * -Math.sin(angle);
     }
 
     tick() {
@@ -50,11 +52,11 @@ class Bullet extends PIXI.Sprite {
         if (this.y - this.height / 2 < 0 || this.y + this.height / 2 > app.renderer.height) {
             this.vy *= -1
             if (this.y < 0) {
-                this.y = 0 + this.height / 2;
+                this.y = 0 + this.height;
             }
 
             if (this.y > app.renderer.height) {
-                this.y = app.renderer.height - this.height / 2;
+                this.y = app.renderer.height - this.height;
             }
         }
 
@@ -74,21 +76,17 @@ class Bullet extends PIXI.Sprite {
         ) {                
             // Calculate new velocities
             let dist = (p.y - this.y) / (p.height / 1.5);
-            let bounceAngle = dist * this.MAXBOUNCEANGLE;
+            let bounceAngle = dist * MAXBOUNCEANGLE;
 
             let mult = -1;
             if (this.x < 100) {
                 mult = 1;
             }
 
-            this.vx = this.BALLSPEED*mult*Math.cos(bounceAngle);
-            this.vy = this.BALLSPEED*-Math.sin(bounceAngle);       
+            this.vx = BALLSPEED*mult*Math.cos(bounceAngle);
+            this.vy = BALLSPEED*-Math.sin(bounceAngle);
 
-            console.log(" dist " + dist + " bounce " + bounceAngle + " vx " + this.vx + " vy " + this.vy);
-            console.log(this.x);
-
-
-            this.x += this.vx * this.BALLSPEED;
+            this.x += this.vx * BALLSPEED;
         }
 
 
@@ -119,10 +117,11 @@ class Player extends PIXI.Sprite {
         this.y = 300;
 
         if (!ai) {
-            upKey.press = () => { this.vy -= 5; }
-            upKey.release = () => { this.vy += 5; }
-            downKey.press = () => { this.vy += 5; }
-            downKey.release = () => { this.vy -= 5; }
+            const vel = BALLSPEED * 2/3;
+            upKey.press = () => { this.vy -= vel; }
+            upKey.release = () => { this.vy += vel; }
+            downKey.press = () => { this.vy += vel; }
+            downKey.release = () => { this.vy -= vel; }
         }
 
     }
@@ -131,24 +130,23 @@ class Player extends PIXI.Sprite {
         if (this.ai) {
             let detected = false;
 
-            if (this.playerNum === 1) {
-                detected = bullet.x < 400 && bullet.vx < 0;
+            if (this.num === 1) {
+                detected = bullet.x < (350 + BALLSPEED * 25) && bullet.vx < 0;
             } else {
-                detected = bullet.x > 400 && bullet.vx > 0;
+                detected = bullet.x > (450 - BALLSPEED * 25) && bullet.vx > 0;
             }
 
             if (detected) {
                 if (bullet.y - bullet.height / 2 >= this.y) {
-                    this.vy = 2;
+                    this.vy = BALLSPEED * 2/3;
                 } else if (bullet.y + bullet.height / 2 <= this.y) {
-                    this.vy = -2;
+                    this.vy = -(BALLSPEED * 2/3);
                 } else {
                     this.vy = 0;
                 }
             } else {
                 this.vy = 0;
             }            
-            console.log(" accel " + this.accel + " vel " + this.vy );
         }
 
         let nexty = this.y + this.vy;
@@ -173,7 +171,7 @@ let up = keyboard('ArrowUp'),
     down = keyboard('ArrowDown');
 
 let bullet, players, p1, p2;
-let p1Score = 0, p2Score = 0, p1Display, p2Display;
+let p1Score = 0, p2Score = -1, p1Display, p2Display;
 
 
 function doneLoading() {
@@ -185,12 +183,11 @@ function doneLoading() {
 function createSprites() {
     players = new PIXI.Container();
     bullet = new Bullet(app.loader.resources.bullet.texture);
-    p1 = new Player(app.loader.resources.player.texture, 1, keyboard('ArrowUp'), keyboard('ArrowDown'), false);
+    p1 = new Player(app.loader.resources.player.texture, 1, keyboard('ArrowUp'), keyboard('ArrowDown'), true);
     p2 = new Player(app.loader.resources.player.texture, 2, keyboard('W'), keyboard('S'), true);
 
     players.addChild(p1);
     players.addChild(p2);
-    // console.log(players.children);
 
     app.stage.addChild(bullet);
     app.stage.addChild(players);
