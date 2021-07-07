@@ -9,10 +9,10 @@ const app = new PIXI.Application({
 });
 
 // Configs
-const BALLSPEED = 5;            // Max speed of ball (movement of paddles changes accordingly)
+const BALLSPEED = 4;            // Max speed of ball (movement of paddles changes accordingly)
 const MAXBOUNCEANGLE = 1.309;   // Max bounce angle (in radians)
-const P1COMPUTER = false;        // Whether P1 is a computer
-const P2COMPUTER = false;        // Whether P2 is a computer
+const P1COMPUTER = true;        // Whether P1 is a computer
+const P2COMPUTER = true;        // Whether P2 is a computer
 
 // Classes
 class Bullet extends PIXI.Sprite {
