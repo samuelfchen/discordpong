@@ -57,6 +57,7 @@ function connect() {
 
     socket.on('moveEnemy', function (y) {
         if (state !== null) {
+            console.log('Move enemy received');
             state.enemy.y = y;
         }
     });
@@ -100,8 +101,9 @@ function connect() {
 
 function transmit() {
     // send position of local paddle
-    if (state !== null) {
-        socket.emit('paddleMove', state.player.y);
+    if (state !== null && state.player.vy !== 0) {
+        // console.log('Paddle Move Sent!');
+        socket.emit('paddleMove', state.player.y, roomID);
     }
     setTimeout(transmit, 50);
 }

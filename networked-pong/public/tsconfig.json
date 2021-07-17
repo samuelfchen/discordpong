@@ -3,8 +3,8 @@
         // "target": "es5",
         "target": "es2015",
         "rootDir": ".",
-        "outDir": "../../build/public",
-        "sourceMap": true,
+        "outDir": "../dist/public",
+        // "sourceMap": true,
         "moduleResolution": "node",
         "composite": true,
         "types": [

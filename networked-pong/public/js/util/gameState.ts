@@ -3,6 +3,8 @@ import keyboard from './keyboard';
 import * as PIXI from 'pixi.js';
 import {io, Socket} from 'socket.io-client';
 
+declare var roomID: any;
+
 class GameState {
     app: PIXI.Application;
     socket: Socket;
@@ -69,7 +71,7 @@ class GameState {
             y : this.bullet.y,
             vx : this.bullet.vx,
             vy : this.bullet.vy
-        });
+        }, roomID);
     }
 
     paddleCollision(b: Bullet, p: Paddle) {

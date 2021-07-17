@@ -71,12 +71,14 @@ let socketManager = (server: any) => {
                 }
             });            
 
-            socket.on('paddleMove', function(data, roomID) {
-                io.to(roomID).emit('moveEnemy', data);
+            socket.on('paddleMove', function(y, roomID) {
+                // console.log('Paddle move received');
+                // console.log(roomID);
+                socket.to(roomID).emit('moveEnemy', y);
             });
 
             socket.on('bulletUpdate', function(data, roomID) {
-                io.to(roomID).emit('bullet', data);
+                socket.to(roomID).emit('bullet', data);
             });
             
             socket.on('disconnect', function(this: Socket) {
