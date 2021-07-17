@@ -1,0 +1,16 @@
+{
+  "compilerOptions": {
+      "rootDir": ".",
+      "outDir": "../dist/server",
+      "strict": true,
+      "noImplicitAny": true,
+      "moduleResolution": "node",
+      "esModuleInterop": true,
+      "skipLibCheck": true,
+      "forceConsistentCasingInFileNames": true,
+  },
+  "exclude": [
+    "node_modules", "client"
+  ]
+}
+
