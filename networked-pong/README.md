@@ -1,0 +1,2 @@
+# Discord Pong
+`npm start`

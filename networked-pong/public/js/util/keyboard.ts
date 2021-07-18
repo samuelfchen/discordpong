@@ -1,5 +1,5 @@
 export default (value: string) => {
-    let key: {
+    const key: {
       value: string,
       isDown: boolean,
       isUp: boolean,
