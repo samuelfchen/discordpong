@@ -1,6 +1,7 @@
 import { Socket } from "socket.io";
 import { Room, Player } from "../util/room";
 
+// Interface for future games.
 export class Game {
   constructor(public room: Room) {}
 

@@ -30,6 +30,9 @@ app.loader.load();
 var state: GameState | null = null,
   socket: Socket;
 
+/**
+ * Called when textures are loaded.
+ */
 function doneLoading() {
   // createSprites();
   connect();
@@ -37,7 +40,9 @@ function doneLoading() {
   transmit();
   app.ticker.add(tick);
 }
-
+/**
+ * Connect to the server.
+ */
 function connect() {
   // Sockets
   socket = io();
@@ -115,7 +120,6 @@ function connect() {
 function transmit() {
   // send position of local paddle
   if (state !== null && state.player.vy !== 0) {
-    // console.log('Paddle Move Sent!');
     socket.emit("game-update", "paddle-move", state.player.y);
   }
   setTimeout(transmit, 20);

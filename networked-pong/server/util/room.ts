@@ -17,9 +17,8 @@ export class Room {
     this.players = [];
     this.game = gameFactory.create(this);
   }
-
   /**
-   * @returns the number of players in the room.
+   * @returns {number} The number of players in the room
    */
   numPlayers(): number {
     let num = 0;
@@ -33,7 +32,7 @@ export class Room {
 
   /**
    * Adds a player to room.
-   * @returns the player that was added, null if room full
+   * @returns {Player | null} the player that was added, null if room full
    * @param  {Socket} socket
    */
   addPlayer(socket: Socket): Player | null {
@@ -55,7 +54,7 @@ export class Room {
   /**
    * Removes a player from the room.
    * @param  {Socket} socket
-   * @returns Player the player that was removed, null if not found
+   * @returns {Player | null} the player that was removed, null if not found
    */
   removePlayer(socket: Socket): Player | null {
     for (var i = 0; i < this.size; i++) {
@@ -74,6 +73,7 @@ export class Room {
   }
 
   /**
+   * Update from the game. Sent to the game engine.
    * @param  {string} message The type of update
    * @param  {any} data The data associated with the update
    */

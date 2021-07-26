@@ -3,20 +3,23 @@ const http = require("http");
 const express = require("express");
 const socket = require("./util/socketManager.js");
 
+const port = process.env.PORT || 3000;
+
 const app = express();
 const server = http.createServer(app);
 
+// Socket Manager
 let { io, rooms, users } = socket();
 socket().listen(server);
 
-const port = process.env.PORT || 3000;
-const publicDirectoryPath = path.join(__dirname, "../public");
-
+// Public folder
 app.use(express.static(path.join(__dirname, "../public")));
 
+// View Engine
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "../views"));
 
+// Paths
 app.get("/", (req: any, res: any) => {
   res.render("404");
 });
@@ -38,5 +41,4 @@ app.get("/:room", (req: any, res: any) => {
 
 server.listen(port, () => {
   console.log(`Server is up on port ${port}!`);
-  // console.log('test')
 });

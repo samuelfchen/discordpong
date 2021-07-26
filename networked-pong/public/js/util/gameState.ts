@@ -1,9 +1,9 @@
 import config from "./config";
 import keyboard from "./keyboard";
 import * as PIXI from "pixi.js";
-import { io, Socket } from "socket.io-client";
+import { Socket } from "socket.io-client";
 
-declare var roomID: any;
+declare var roomID: any; // Declared in ejs template
 
 class GameState {
   bullet: Bullet;
@@ -22,13 +22,14 @@ class GameState {
     playerNum: number,
     public socket: Socket
   ) {
+    // Declare entities
     this.bullet = new Bullet(app, app.loader.resources.bullet.texture!);
     this.player = new Player(
       app,
       app.loader.resources.player.texture!,
       playerNum,
-      keyboard(config.p1Input[0]),
-      keyboard(config.p1Input[1])
+      keyboard(config.p2Input[0]),
+      keyboard(config.p2Input[1])
     );
     this.enemy = new Enemy(
       app,
@@ -48,6 +49,7 @@ class GameState {
       this.p2 = this.player;
     }
 
+    // Only display player for now, until enemy spawns and game starts
     app.stage.addChild(this.player);
 
     // Score display
@@ -73,7 +75,12 @@ class GameState {
     app.stage.addChild(this.p1Display);
     app.stage.addChild(this.p2Display);
   }
-
+  /**
+   * Checks if a bullet-paddle collision has happened.
+   * Calculates new bullet velocities and updates the server.
+   * @param  {Bullet} b
+   * @param  {Paddle} p
+   */
   paddleCollision(b: Bullet, p: Paddle) {
     if (
       b.y + b.height / 2 > p.y - p.height / 2 &&
@@ -92,11 +99,8 @@ class GameState {
 
       b.x += b.vx * config.ballSpeed; // Help out direction change
 
-      console.log(b);
-
-      console.log(b.vx + " " + b.vy);
-
       console.log("boing");
+      // Update server
       this.socket.emit("game-update", "bounce", {
         x: this.bullet.x,
         y: this.bullet.y,
@@ -105,26 +109,36 @@ class GameState {
       });
     }
   }
-
+  /**
+   * Checks if ball is out of bounds (signalling a score increment)
+   */
   checkWin() {
     if (
       this.bullet.x - this.bullet.width / 2 < 0 ||
       this.bullet.x + this.bullet.width / 2 > this.app.renderer.width
     ) {
+      // Send to server (only the miss update from the side
+      // 'in possession' will be considered)
       this.socket.emit("game-update", "miss", {});
     }
   }
-
+  /**
+   * Updates the score
+   */
   updateScore() {
     this.p1Display.text = this.p1Score.toLocaleString();
     this.p2Display.text = this.p2Score.toLocaleString();
   }
-
+  /**
+   * Tick
+   */
   tick() {
     this.bullet.tick();
     this.player.tick();
     this.enemy.tick();
 
+    // Only check for paddle collision on the side in which
+    // the bullet is heading.
     if (this.bullet.x < this.app.renderer.width / 2) {
       this.paddleCollision(this.bullet, this.p1);
     } else {
@@ -188,6 +202,7 @@ class Paddle extends PIXI.Sprite {
     this.vy = 0;
     this.vx = 0;
 
+    // Set x coord
     if (side === 1) {
       this.x = config.playerX;
     } else {
@@ -200,6 +215,7 @@ class Paddle extends PIXI.Sprite {
   tick() {
     let nextY = this.y + this.vy;
 
+    // Bound y movement.
     if (
       nextY - this.height / 2 > 0 &&
       nextY + this.height / 2 < this.app.renderer.height
@@ -219,6 +235,7 @@ class Player extends Paddle {
   ) {
     super(app, texture, side);
 
+    // Declare movement
     upKey.press = downKey.release = () => {
       this.vy -= config.playerVel;
     };

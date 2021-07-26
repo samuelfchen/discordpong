@@ -1,6 +1,6 @@
-import { Server, Socket } from "socket.io";
+import { Socket } from "socket.io";
 import { PongFactory } from "../game/pong";
-import { Room, Player } from "./room";
+import { Room } from "./room";
 
 module.exports = () => {
   var rooms: { [key: string]: Room } = {};
@@ -12,7 +12,7 @@ module.exports = () => {
    * Starts socket communication.
    * @param {Socket} server The express http server.
    */
-  var listen = (server: Socket) => {
+  function listen(server: Socket) {
     io = require("socket.io")(server);
 
     io.sockets.on("connection", (socket: Socket) => {
@@ -23,7 +23,7 @@ module.exports = () => {
       socket.on("disconnect", disconnect);
       socket.on("game-update", gameUpdate);
     });
-  };
+  }
 
   /**
    * Gets the room of a given user.
@@ -65,6 +65,7 @@ module.exports = () => {
   /**
    * Called when a client joins a room.
    * @param  {Socket} socket
+   * @param  {string} roomID
    */
   function join(this: Socket, roomID: string) {
     console.log("join-room: " + this.id);
@@ -75,18 +76,14 @@ module.exports = () => {
       return;
     }
 
-    joinRoom(this, roomID);
-    return;
-  }
-
-  function joinRoom(socket: Socket, roomID: string) {
     let room = rooms[roomID];
-    let player: Player | null = room.addPlayer(socket);
+    let player = room.addPlayer(socket);
     console.log(player);
 
     if (player !== null) {
       users[socket.id] = roomID;
     }
+    return;
   }
 
   /**

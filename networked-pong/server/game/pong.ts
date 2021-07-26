@@ -1,6 +1,5 @@
 import { Room, Player } from "../util/room";
 import { Game, GameFactory } from "./game";
-import { Socket } from "socket.io";
 
 interface Ball {
   x: number;
@@ -17,7 +16,7 @@ export class Pong extends Game {
   s1: number;
   s2: number;
   ticking: boolean = false;
-  pointCooldown: boolean = false;
+  cooldown: boolean = false;
 
   constructor(public room: Room) {
     super(room);
@@ -51,7 +50,9 @@ export class Pong extends Game {
     this.p1?.socket.emit("stop");
     this.p2?.socket.emit("stop");
   }
-
+  /**
+   * Debug function : prints which player is in possession.
+   */
   printPossession() {
     if (this.possession === this.p1) {
       console.log("P1 in possession");
@@ -61,11 +62,15 @@ export class Pong extends Game {
       console.log("uh oh");
     }
   }
-
+  /**
+   * Handles an update from a client
+   * @param  {Player} player
+   * @param  {string} message
+   * @param  {any} data
+   */
   update(player: Player, message: string, data: any) {
     // Paddle move is directly sent to other player
     if (message === "paddle-move") {
-      // console.log("Server: received paddle-move");
       let p: Player | null = null;
 
       if (this.p1 === player) {
@@ -79,11 +84,11 @@ export class Pong extends Game {
     }
 
     // For ball updates, only care about the person the ball is heading towards
-    if (player === this.possession && this.pointCooldown === false) {
-      this.pointCooldown = true;
+    if (player === this.possession && this.cooldown === false) {
+      this.cooldown = true;
       switch (message) {
         case "bounce":
-          // Switch the possession and broadcast to other player
+          // Switch the possession and broadcast new bullet props to other player
           this.possession = this.possession === this.p1 ? this.p2 : this.p1;
           this.printPossession();
           this.ball = data;
@@ -94,7 +99,6 @@ export class Pong extends Game {
           this.possession = this.possession === this.p1 ? this.p2 : this.p1;
           this.printPossession();
           this.reset();
-          console.log("Miss");
           if (this.possession === this.p1) {
             this.s1++;
           } else {
@@ -106,12 +110,16 @@ export class Pong extends Game {
           break;
       }
 
+      // Reset cooldown after a short delay.
       setTimeout(() => {
-        this.pointCooldown = false;
+        this.cooldown = false;
       }, 200);
     }
   }
 
+  /**
+   * Called when the bullet needs to be reset to the middle of the screen.
+   */
   reset() {
     let vx = this.possession === this.p1 ? -1 : 1;
 
@@ -119,6 +127,10 @@ export class Pong extends Game {
     this.p2?.socket.emit("reset", vx);
   }
 
+  /**
+   * Called when a new client joins.
+   * @param  {Player|null} player
+   */
   onClientJoin(player: Player | null) {
     player?.socket.emit("assign-side", player?.num + 1);
 
@@ -129,7 +141,10 @@ export class Pong extends Game {
       player?.socket.emit("player-connect");
     }
   }
-
+  /**
+   * Called when a client leaves. Reset the score.
+   * @param  {Player|null} player
+   */
   onClientLeave(player: Player | null) {
     this.stop();
     this.s1 = 0;
