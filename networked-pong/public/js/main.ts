@@ -43,22 +43,20 @@ function connect() {
   socket = io();
   socket.emit("join-room", roomID);
 
-  socket.on("p1", function () {
-    state = new GameState(app, 1, socket);
-  });
-  socket.on("p2", function () {
-    state = new GameState(app, 2, socket);
+  socket.on("assign-side", function (side: number) {
+    state = new GameState(app, side, socket);
   });
 
-  socket.on("moveEnemy", function (y) {
-    if (state !== null) {
+  socket.on("enemy-move", function (y) {
+    if (state) {
       console.log("Move enemy received");
       state.enemy.y = y;
     }
   });
 
-  socket.on("bullet", function (data) {
+  socket.on("bullet-update", function (data) {
     if (state) {
+      console.log("Bullet update");
       state.bullet.x = data.x;
       state.bullet.y = data.y;
       state.bullet.vx = data.vx;
@@ -66,29 +64,50 @@ function connect() {
     }
   });
 
-  socket.on("start", function (data) {
+  socket.on("score-update", function (data) {
     if (state) {
-      console.log("Received start");
-      app.stage.addChild(state.bullet);
-      state.bullet.x = app.renderer.width / 2;
-      state.bullet.y = app.renderer.height / 2;
-      state.bullet.vx = data.vx * config.ballSpeed;
-      state.bullet.vy = data.vy * config.ballSpeed;
+      state.p1Score = data.s1;
+      state.p2Score = data.s2;
+      state.updateScore();
     }
   });
 
-  socket.on("enemy-disconnect", function () {
-    console.log("Enemy disconnected");
+  socket.on("start", function () {
     if (state) {
-      app.stage.removeChild(state.enemy);
+      app.stage.addChild(state.bullet);
+    }
+  });
+
+  socket.on("reset", function (vx) {
+    if (state) {
+      state.bullet.x = app.renderer.width / 2;
+      state.bullet.y = app.renderer.height / 2;
+      state.bullet.vx = vx * config.ballSpeed;
+      state.bullet.vy = 0;
+
+      state.player.y = app.renderer.height / 2;
+      state.enemy.y = app.renderer.height / 2;
+    }
+  });
+
+  socket.on("stop", function () {
+    console.log("Stop");
+    if (state) {
       app.stage.removeChild(state.bullet);
     }
   });
 
-  socket.on("enemy-connect", function () {
+  socket.on("player-connect", function () {
     console.log("Enemy connected");
     if (state) {
       app.stage.addChild(state.enemy);
+    }
+  });
+
+  socket.on("player-disconnect", function () {
+    console.log("Enemy disconnected");
+    if (state) {
+      app.stage.removeChild(state.enemy);
     }
   });
 }
@@ -97,9 +116,9 @@ function transmit() {
   // send position of local paddle
   if (state !== null && state.player.vy !== 0) {
     // console.log('Paddle Move Sent!');
-    socket.emit("paddleMove", state.player.y, roomID);
+    socket.emit("game-update", "paddle-move", state.player.y);
   }
-  setTimeout(transmit, 50);
+  setTimeout(transmit, 20);
 }
 
 function tick() {

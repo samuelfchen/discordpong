@@ -1,105 +1,126 @@
 import { Server, Socket } from "socket.io";
+import { PongFactory } from "../game/pong";
+import { Room, Player } from "./room";
 
-let socketManager = (server: any) => {
-  let io = require("socket.io")(server);
+module.exports = () => {
+  var rooms: { [key: string]: Room } = {};
+  var users: { [key: string]: string } = {};
+  var clients = [];
+  var io;
 
-  type Room = {
-    p1: Socket | null;
-    p2: Socket | null;
+  /**
+   * Starts socket communication.
+   * @param {Socket} server The express http server.
+   */
+  var listen = (server: Socket) => {
+    io = require("socket.io")(server);
+
+    io.sockets.on("connection", (socket: Socket) => {
+      // Add a new client
+      addClient(socket);
+
+      socket.on("join-room", join);
+      socket.on("disconnect", disconnect);
+      socket.on("game-update", gameUpdate);
+    });
   };
 
-  let rooms: { [key: string]: Room } = {};
-  let users: { [key: string]: string } = {};
-
-  function addRoom(roomID: string) {
-    rooms[roomID] = {
-      p1: null,
-      p2: null,
-    };
+  /**
+   * Gets the room of a given user.
+   * @returns null if the room is not found, the room otherwise.
+   * @param  {Socket} user
+   */
+  function getUserRoom(user: Socket) {
+    let roomID = users[user.id];
+    if (!roomID || !(roomID in rooms)) {
+      console.log("Error: Room not found for user " + user.id);
+      return null;
+    }
+    return rooms[roomID];
   }
 
-  addRoom("test-room");
+  /**
+   * Sends a game update to the appropriate room.
+   * @param  {Socket} this
+   * @param  {string} message
+   * @param  {any} data
+   */
+  function gameUpdate(this: Socket, message: string, data: any) {
+    // Send game update to the client's room
+    getUserRoom(this)?.update(this, message, data);
+  }
 
-  io.sockets.on("connection", function (socket: Socket) {
-    console.log("New client: " + socket.id);
+  /**
+   * Called when a client disconnects
+   * @param  {Socket} this the socket that has disconnected.
+   */
+  function disconnect(this: Socket) {
+    let player = getUserRoom(this)?.removePlayer(this);
 
-    socket.on("join-room", function (this: Socket, roomID: string) {
-      console.log("join-room : " + socket.id);
-      if (!(roomID in rooms)) {
-        // Add empty room
-        console.log("Room does not exist, creating new room!");
-        rooms[roomID] = {
-          p1: null,
-          p2: null,
-        };
-      }
+    if (!player) {
+      console.log("Anonymous disconnect.");
+    }
+  }
 
-      let room = rooms[roomID];
+  /**
+   * Called when a client joins a room.
+   * @param  {Socket} socket
+   */
+  function join(this: Socket, roomID: string) {
+    console.log("join-room: " + this.id);
+    createIfNotExists(roomID); // Comment out if you don't want to create a new room by default
 
-      if (room.p1 === null) {
-        room.p1 = this;
-        console.log("Player 1 has connected to room " + roomID);
-        this.emit("p1");
-        this.join(roomID);
-        users[socket.id] = roomID;
+    if (!(roomID in rooms)) {
+      console.log("Error: room does not exist");
+      return;
+    }
 
-        if (room.p2 !== null) {
-          io.to(roomID).emit("enemy-connect");
-        }
-      } else if (room.p2 === null) {
-        room.p2 = this;
-        console.log("Player 2 has connected to room " + roomID);
-        this.emit("p2");
-        this.join(roomID);
-        users[socket.id] = roomID;
+    joinRoom(this, roomID);
+    return;
+  }
 
-        if (room.p1 !== null) {
-          io.to(roomID).emit("enemy-connect");
-        }
-      }
+  function joinRoom(socket: Socket, roomID: string) {
+    let room = rooms[roomID];
+    let player: Player | null = room.addPlayer(socket);
+    console.log(player);
 
-      if (room.p1 !== null && room.p2 !== null) {
-        // Game is full, start game
-        console.log("Starting game in room " + roomID);
-        io.to(roomID).emit("start", {
-          vx: Math.random() > 0.5 ? -1 : 1,
-          vy: 0,
-        });
-      }
-    });
+    if (player !== null) {
+      users[socket.id] = roomID;
+    }
+  }
 
-    socket.on("paddleMove", function (y, roomID) {
-      // console.log('Paddle move received');
-      // console.log(roomID);
-      socket.to(roomID).emit("moveEnemy", y);
-    });
+  /**
+   * Create new room if roomID does not exist.
+   * @param  {string} roomID
+   */
+  function createIfNotExists(roomID: string) {
+    if (!(roomID in rooms)) {
+      console.log("Room ID does not exist, creating new room.");
+      createRoom(roomID);
+    }
+  }
 
-    socket.on("bulletUpdate", function (data, roomID) {
-      socket.to(roomID).emit("bullet", data);
-    });
+  /**
+   * Create a new room.
+   * @param  {string} roomID
+   */
+  function createRoom(roomID: string) {
+    rooms[roomID] = new Room(roomID, 2, new PongFactory());
+  }
 
-    socket.on("disconnect", function (this: Socket) {
-      let roomID = users[this.id];
+  /**
+   * Adds a client.
+   * @param  {Socket} socket
+   */
+  function addClient(socket: Socket) {
+    clients.push(socket);
+  }
 
-      if (roomID in rooms) {
-        let room = rooms[roomID];
-
-        if (room.p1 != null && this.id === room.p1.id) {
-          room.p1 = null;
-          console.log("Player 1 has disconnected from " + roomID);
-          io.to(roomID).emit("enemy-disconnect");
-        } else if (room.p2 != null && this.id === room.p2.id) {
-          room.p2 = null;
-          console.log("Player 2 has disconnected from " + roomID);
-          io.to(roomID).emit("enemy-disconnect");
-        } else {
-          console.log("Anonymous client has disconnected.");
-        }
-      }
-    });
-  });
-
-  return { io, rooms, users };
+  return {
+    listen: listen,
+    createRoom: createRoom,
+    rooms: rooms,
+    users: users,
+    io: io,
+  };
 };
-
-module.exports = socketManager;

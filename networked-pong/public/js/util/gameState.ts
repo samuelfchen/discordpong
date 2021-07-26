@@ -6,8 +6,6 @@ import { io, Socket } from "socket.io-client";
 declare var roomID: any;
 
 class GameState {
-  app: PIXI.Application;
-  socket: Socket;
   bullet: Bullet;
   player: Player;
   enemy: Enemy;
@@ -17,11 +15,13 @@ class GameState {
   p2Display: PIXI.Text;
   p1Score: number;
   p2Score: number;
+  scoreStyle: PIXI.TextStyle;
 
-  constructor(app: PIXI.Application, playerNum: number, socket: Socket) {
-    this.app = app;
-    this.socket = socket;
-
+  constructor(
+    public app: PIXI.Application,
+    playerNum: number,
+    public socket: Socket
+  ) {
     this.bullet = new Bullet(app, app.loader.resources.bullet.texture!);
     this.player = new Player(
       app,
@@ -29,13 +29,11 @@ class GameState {
       playerNum,
       keyboard(config.p1Input[0]),
       keyboard(config.p1Input[1])
-      // config.p1Computer
     );
     this.enemy = new Enemy(
       app,
       app.loader.resources.enemy.texture!,
       playerNum === 1 ? 2 : 1
-      // config.p2Computer
     );
 
     // allocate p1 and p2
@@ -53,7 +51,7 @@ class GameState {
     app.stage.addChild(this.player);
 
     // Score display
-    let scoreStyle = new PIXI.TextStyle({
+    this.scoreStyle = new PIXI.TextStyle({
       fontSize: 36,
       fill: "white",
     });
@@ -61,26 +59,19 @@ class GameState {
     this.p1Score = 0;
     this.p2Score = 0;
 
-    this.p1Display = new PIXI.Text(this.p1Score.toLocaleString(), scoreStyle);
+    this.p1Display = new PIXI.Text(
+      this.p1Score.toLocaleString(),
+      this.scoreStyle
+    );
     this.p1Display.anchor.x = 1;
     this.p1Display.position.set(370, 10);
-    this.p2Display = new PIXI.Text(this.p2Score.toLocaleString(), scoreStyle);
+    this.p2Display = new PIXI.Text(
+      this.p2Score.toLocaleString(),
+      this.scoreStyle
+    );
     this.p2Display.position.set(430, 10);
     app.stage.addChild(this.p1Display);
     app.stage.addChild(this.p2Display);
-  }
-
-  emitBullet() {
-    this.socket.emit(
-      "bulletUpdate",
-      {
-        x: this.bullet.x,
-        y: this.bullet.y,
-        vx: this.bullet.vx,
-        vy: this.bullet.vy,
-      },
-      roomID
-    );
   }
 
   paddleCollision(b: Bullet, p: Paddle) {
@@ -106,7 +97,12 @@ class GameState {
       console.log(b.vx + " " + b.vy);
 
       console.log("boing");
-      this.emitBullet();
+      this.socket.emit("game-update", "bounce", {
+        x: this.bullet.x,
+        y: this.bullet.y,
+        vx: this.bullet.vx,
+        vy: this.bullet.vy,
+      });
     }
   }
 
@@ -115,19 +111,13 @@ class GameState {
       this.bullet.x - this.bullet.width / 2 < 0 ||
       this.bullet.x + this.bullet.width / 2 > this.app.renderer.width
     ) {
-      // Find the closest paddle and add score to other player
-      let d1 = Math.abs(this.bullet.x - this.player.x);
-      let d2 = Math.abs(this.bullet.x - this.enemy.x);
-
-      if (d1 > d2) {
-        this.player.score++;
-      } else {
-        this.enemy.score++;
-      }
-
-      this.bullet.reset(this.bullet.x < this.app.renderer.width / 2 ? 2 : 1);
-      this.emitBullet();
+      this.socket.emit("game-update", "miss", {});
     }
+  }
+
+  updateScore() {
+    this.p1Display.text = this.p1Score.toLocaleString();
+    this.p2Display.text = this.p2Score.toLocaleString();
   }
 
   tick() {
@@ -146,35 +136,17 @@ class GameState {
 }
 
 class Bullet extends PIXI.Sprite {
-  app: PIXI.Application;
-  vy: number;
-  vx: number;
+  vy: number = 0;
+  vx: number = 0;
 
-  constructor(app: PIXI.Application, texture: PIXI.Texture) {
+  constructor(public app: PIXI.Application, texture: PIXI.Texture) {
     super(texture);
-    this.app = app;
 
     this.anchor.x = 0.5;
     this.anchor.y = 0.5;
 
-    this.vx = 0;
-    this.vy = 0;
-
-    this.reset(1);
-  }
-
-  reset(winSide: number) {
-    // Serve to opposite side
-    let direction = winSide === 2 ? -1 : 1;
-
-    // let angle = (Math.random() - 0.5) * 0.5;
-    this.x = this.app.renderer.width / 2;
-    this.y = this.app.renderer.height / 2;
-    // this.vx = config.ballSpeed * direction * Math.cos(angle);
-    // this.vy = config.ballSpeed * -Math.sin(angle);
-
-    this.vx = config.ballSpeed * direction;
-    this.vy = 0;
+    this.x = app.renderer.width / 2;
+    this.y = app.renderer.height / 2;
   }
 
   tick() {
@@ -199,13 +171,15 @@ class Bullet extends PIXI.Sprite {
 }
 
 class Paddle extends PIXI.Sprite {
-  app: PIXI.Application;
-  vx: number;
-  vy: number;
-  side: number;
-  score: number;
+  vx: number = 0;
+  vy: number = 0;
+  score: number = 0;
 
-  constructor(app: PIXI.Application, texture: PIXI.Texture, side: number) {
+  constructor(
+    public app: PIXI.Application,
+    texture: PIXI.Texture,
+    public side: number
+  ) {
     super(texture);
 
     this.anchor.x = 0.5;
@@ -213,12 +187,6 @@ class Paddle extends PIXI.Sprite {
 
     this.vy = 0;
     this.vx = 0;
-
-    this.side = side;
-
-    this.app = app;
-
-    this.score = 0;
 
     if (side === 1) {
       this.x = config.playerX;
@@ -264,8 +232,6 @@ class Enemy extends Paddle {
   constructor(app: PIXI.Application, texture: PIXI.Texture, side: number) {
     super(app, texture, side);
   }
-
-  tick() {}
 }
 
 export { GameState, Player, Enemy, Bullet };

@@ -6,7 +6,8 @@ const socket = require("./util/socketManager.js");
 const app = express();
 const server = http.createServer(app);
 
-let { io, rooms, users } = socket(server);
+let { io, rooms, users } = socket();
+socket().listen(server);
 
 const port = process.env.PORT || 3000;
 const publicDirectoryPath = path.join(__dirname, "../public");

@@ -4,7 +4,7 @@ const path = require("path");
 
 module.exports = {
   entry: {
-    game: "./public/js/game.ts",
+    game: "./public/js/main.ts",
   },
   devtool: "inline-source-map",
   mode: "development",

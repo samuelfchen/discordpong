@@ -11,7 +11,7 @@
     "start:clean": "rimraf dist/",
     "start:copy": "copyfiles ./**/*.ejs ./**/*.png dist",
     "start:build-client": "webpack --watch --config ./public/webpack.config.js",
-    "start:run": "nodemon dist/server/index.js"
+    "start:run": "nodemon dist/server/index.js --trace-warnings"
   },
   "author": "",
   "license": "ISC",

@@ -1,16 +1,15 @@
 {
   "compilerOptions": {
-      "rootDir": ".",
-      "outDir": "../dist/server",
-      "strict": true,
-      "noImplicitAny": true,
-      "moduleResolution": "node",
-      "esModuleInterop": true,
-      "skipLibCheck": true,
-      "forceConsistentCasingInFileNames": true,
+    "rootDir": ".",
+    "outDir": "../dist/server",
+    "module": "commonjs",
+    "target": "es6",
+    "strict": true,
+    "noImplicitAny": true,
+    // "moduleResolution": "node",
+    // "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true
   },
-  "exclude": [
-    "node_modules", "client"
-  ]
+  "exclude": ["node_modules", "client"]
 }
-

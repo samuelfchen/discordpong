@@ -1,0 +1,15 @@
+*Server -> Client
+player-disconnect
+player-connect
+assign-side
+start
+reset
+stop
+ball-update
+score-update
+enemy-move
+
+
+*Client -> Server
+join-room
+game-update
